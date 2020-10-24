@@ -63,8 +63,8 @@ char*            Buff_Maker              (size_t file_size);
 size_t           Strings_Counter         (char* point_buff, size_t num_symbols);
 char             Command_Compare         (char* string_temp);
 char             Reg_Compare             (char* string_temp);
-int              Processing_PushCommand  (char* point_buff, FILE* Output);
-int              Processing_PopCommand   (char* point_buff, FILE* Output);
+int              Processing_PushCommand  (char* point_buff, char* buff_binary, size_t* offset);
+int              Processing_PopCommand   (char* point_buff, char* buff_binary, size_t* offset);
 void             Translator              (const struct file_info buff_info, const char* file_name);
 
 

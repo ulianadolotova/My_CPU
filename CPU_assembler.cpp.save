@@ -24,7 +24,7 @@ void Translator (const struct file_info buff_info, const char* file_name)
 
     assert (point_buff);
 
-    size_t i = 0;
+    size_t i = 1;
 
     char string_temp[MAX_STRING_SIZE] = {};
     char num_command  = IMPOSSIBLE_COMMAND;
@@ -41,7 +41,7 @@ void Translator (const struct file_info buff_info, const char* file_name)
 
         sscanf (point_buff + i, "%s%n", string_temp, &pos);
 
-
+        // CHECKS
         if (pos == IMPOSSIBLE_POS  || pos > MAX_STRING_SIZE)
         {
             SYNTAX_ERROR
@@ -53,14 +53,16 @@ void Translator (const struct file_info buff_info, const char* file_name)
         {
             SYNTAX_ERROR
         }
+        //--------------------------------------------------
 
         buff_binary[offset] = num_command;
-        //printf ("%d\n", num_command);
         offset += sizeof (char);
 
         if (num_command == PUSH_CMD)
         {
             int pos_temp = Processing_PushCommand (point_buff  + i + pos, buff_binary + offset, &offset);
+
+            offset += sizeof (char);
 
             if (pos_temp == IMPOSSIBLE_POS)
             {
@@ -85,14 +87,10 @@ void Translator (const struct file_info buff_info, const char* file_name)
         i += pos;
     }
 
+    FILE* Output = fopen ("Code_format.txt", "w+");
 
+    assert (Output);
 
-//------------------------------------------------------
-    FILE* Output = fopen ("Code_format.bin", "wb+");   //
-                                                       //
-    assert (Output);                                   //
-
-    //printf ("offset = %d", offset);
     fwrite (buff_binary, offset, 1, Output);
 
     fclose (Output);
@@ -175,11 +173,8 @@ int Processing_PushCommand (char* point_buff, char* buff_binary, size_t* offset)
         else
         {
             *(buff_binary) = PUSH_MODE_REG;
-            //printf ("%d\n", PUSH_MODE_REG);
             *(offset) += sizeof (char);
-
             *(buff_binary) = reg_name;
-            //printf ("%d\n", reg_name);
             *(offset) += sizeof (char);
             return pos;
         }
@@ -188,11 +183,9 @@ int Processing_PushCommand (char* point_buff, char* buff_binary, size_t* offset)
     else
     {
         *(buff_binary) = PUSH_MODE_VAL;
-        //printf ("%d\n", PUSH_MODE_VAL);
         *(offset) += sizeof (char);
 
         *((double*) (buff_binary)) = value;
-        //printf ("%lg\n", value);
         *(offset) += sizeof (double);
 
         return pos;
@@ -218,7 +211,6 @@ int Processing_PopCommand (char* point_buff, char* buff_binary, size_t* offset)
     else
     {
         *(buff_binary) = reg_name;
-        //printf ("%d\n", reg_name);
         *(offset) += sizeof (char);
         return pos;
     }
@@ -288,6 +280,7 @@ size_t Size_File_Counter (const char* file_name)
 //!
 //! @return      num_symbols  - Number of the symbols in the file
 //!
+//! @note Function pushes '\0' to the first element and '\0' to the last.
 //---------------------------------------------------------------------------------
 size_t Buff_Filler (char* point_buff, const char* file_name, size_t file_size)
 {
@@ -297,11 +290,15 @@ size_t Buff_Filler (char* point_buff, const char* file_name, size_t file_size)
 
     FILE* file_pointer = fopen(file_name, "r");
 
-    size_t num_symbols = fread (point_buff, sizeof (char), file_size, file_pointer);
+    *(point_buff) = '\0';
+
+    size_t num_symbols = fread (point_buff + 1, sizeof (char), file_size, file_pointer);
+
+    *(point_buff + 1 + num_symbols) =  '\0';
 
     fclose (file_pointer);
 
-    return num_symbols;
+    return num_symbols + 2;
 }
 
 
