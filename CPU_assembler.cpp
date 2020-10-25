@@ -29,11 +29,49 @@ void Translator (const struct file_info buff_info, const char* file_name)
     char string_temp[MAX_STRING_SIZE] = {};
     char num_command  = IMPOSSIBLE_COMMAND;
 
-    char*  buff_binary = Buff_Maker (num_symbols);
+    char*  buff_binary = Buff_Maker (MAX_BUFF_SIZE);
 
     size_t offset = 0;
 
-    //printf ("num_symbols = %d\n", num_symbols);
+    #define DEF_CMD(name, num, argc, code)                                                                   \
+    if (strcmp(string_temp, #name) == 0)                                                                     \
+    {                                                                                                        \
+        if (pos == IMPOSSIBLE_POS  || pos > MAX_STRING_SIZE)                                                 \
+        {                                                                                                    \
+            SYNTAX_ERROR                                                                                     \
+        }                                                                                                    \
+                                                                                                             \
+        buff_binary[offset] = (char) num;                                                                    \
+        offset += sizeof (char);                                                                             \
+                                                                                                             \
+        if (num == PUSH_CMD)                                                                                 \
+        {                                                                                                    \
+            int pos_temp = Processing_PushCommand (point_buff  + i + pos, buff_binary + offset, &offset);    \
+                                                                                                             \
+            if (pos_temp == IMPOSSIBLE_POS)                                                                  \
+            {                                                                                                \
+                SYNTAX_ERROR                                                                                 \
+            }                                                                                                \
+                                                                                                             \
+            pos += pos_temp;                                                                                 \
+        }                                                                                                    \
+                                                                                                             \
+        if (num == POP_CMD)                                                                                  \
+        {                                                                                                    \
+            int pos_temp = Processing_PopCommand (point_buff + i + pos, buff_binary + offset, &offset);      \
+                                                                                                             \
+            if (pos_temp == IMPOSSIBLE_POS)                                                                  \
+            {                                                                                                \
+                SYNTAX_ERROR                                                                                 \
+            }                                                                                                \
+                                                                                                             \
+            pos += pos_temp;                                                                                 \
+        }                                                                                                    \
+                                                                                                             \
+        i += pos;                                                                                            \
+    }                                                                                                        \
+    else                                                                                                     \
+
     while (i < num_symbols)
     {
 
@@ -41,88 +79,27 @@ void Translator (const struct file_info buff_info, const char* file_name)
 
         sscanf (point_buff + i, "%s%n", string_temp, &pos);
 
-
-        if (pos == IMPOSSIBLE_POS  || pos > MAX_STRING_SIZE)
+        #include "Commands.h"
         {
-            SYNTAX_ERROR
+        /*else*/ SYNTAX_ERROR
         }
 
-        num_command = Command_Compare (string_temp);
-
-        if (num_command == IMPOSSIBLE_COMMAND)
-        {
-            SYNTAX_ERROR
-        }
-
-        buff_binary[offset] = num_command;
-        //printf ("%d\n", num_command);
-        offset += sizeof (char);
-
-        if (num_command == PUSH_CMD)
-        {
-            int pos_temp = Processing_PushCommand (point_buff  + i + pos, buff_binary + offset, &offset);
-
-            if (pos_temp == IMPOSSIBLE_POS)
-            {
-                SYNTAX_ERROR
-            }
-
-            pos += pos_temp;
-        }
-
-        if (num_command == POP_CMD)
-        {
-            int pos_temp = Processing_PopCommand (point_buff + i + pos, buff_binary + offset, &offset);
-
-            if (pos_temp == IMPOSSIBLE_POS)
-            {
-                SYNTAX_ERROR
-            }
-
-            pos += pos_temp;
-        }
-
-        i += pos;
     }
 
+    #undef DEF_CMD
 
+    FILE* Output = fopen ("Code_format.bin", "wb+");
 
-//------------------------------------------------------
-    FILE* Output = fopen ("Code_format.bin", "wb+");   //
-                                                       //
-    assert (Output);                                   //
+    assert (Output);
 
-    //printf ("offset = %d", offset);
     fwrite (buff_binary, offset, 1, Output);
 
     fclose (Output);
+
+    free   (buff_binary);
+    free   (point_buff);
 }
 
-
-//----------------------------------------------------------------------------------
-//! This function looks for the right command in array of possible commands.
-//!
-//! @param [out] string_temp - Array, which contains name of the command
-//!
-//! @return Function returns number of the command or IMPOSSSIBLE_command
-//!         if command was not found in array.
-//-----------------------------------------------------------------------------------
-char Command_Compare (char* string_temp)
-{
-    const char* arr_commands[NUM_COMMANDS] = {"hlt", "in", "out", "push", "pop", "add", "mul", "sub",
-                                                "seg", "pow", "sin", "cos"};
-
-
-    for (char i = 0; i < NUM_COMMANDS; i++)
-    {
-        assert (i >= 0);
-
-        if (strcmp (arr_commands[i], string_temp) == 0)
-            return i;
-    }
-
-    return IMPOSSIBLE_COMMAND;
-}
 
 
 
@@ -136,16 +113,16 @@ char Command_Compare (char* string_temp)
 //-----------------------------------------------------------------------------------
 char Reg_Compare (char* string_temp)
 {
-    if (strcmp (string_temp, "rax") == 0)
+    if (strcmp (string_temp, "RAX") == 0)
         return RAX;
 
-    if (strcmp (string_temp, "rbx") == 0)
+    else if (strcmp (string_temp, "RBX") == 0)
         return RBX;
 
-    if (strcmp (string_temp, "rcx") == 0)
+    else if (strcmp (string_temp, "RCX") == 0)
         return RCX;
 
-    if (strcmp (string_temp, "rdx") == 0)
+    else if (strcmp (string_temp, "RDX") == 0)
         return RDX;
 
     return IMPOSSIBLE_REG;
@@ -178,7 +155,7 @@ int Processing_PushCommand (char* point_buff, char* buff_binary, size_t* offset)
             //printf ("%d\n", PUSH_MODE_REG);
             *(offset) += sizeof (char);
 
-            *(buff_binary) = reg_name;
+            *(buff_binary + sizeof (char)) = reg_name;
             //printf ("%d\n", reg_name);
             *(offset) += sizeof (char);
             return pos;
@@ -191,7 +168,7 @@ int Processing_PushCommand (char* point_buff, char* buff_binary, size_t* offset)
         //printf ("%d\n", PUSH_MODE_VAL);
         *(offset) += sizeof (char);
 
-        *((double*) (buff_binary)) = value;
+        *((double*) (buff_binary + sizeof (char))) = value;
         //printf ("%lg\n", value);
         *(offset) += sizeof (double);
 
