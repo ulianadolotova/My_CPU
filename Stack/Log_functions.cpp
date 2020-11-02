@@ -170,7 +170,7 @@ error_t Stack_Dump (Stack_t* pointer)
     }
 
 
-    FILE* Log_File = fopen ("Log_File.txt", "a");
+    FILE* Log_File = fopen ("Log_File.txt", "w");
 
     assert (Log_File != NULL);
 

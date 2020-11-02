@@ -1,0 +1,15 @@
+push 1
+push -1
+pop rax
+pop rbx
+
+push 10
+in
+je :end_root
+hlt
+
+end_root:
+push rax
+out
+push rbx
+out

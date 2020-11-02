@@ -2,7 +2,6 @@
 
 int main ()
 {
-
     CPU* cpu = (CPU*) calloc (1, sizeof (CPU));
 
     assert (cpu);
@@ -11,14 +10,22 @@ int main ()
     cpu->registers = (double*) Buff_Maker ((NUM_REGISTERS + 1) * sizeof (double));
     cpu->pc        = 0;
 
-    Poison_Space (cpu->registers, cpu->registers + NUM_REGISTERS + 1);
+    Poison_Space (cpu->registers, cpu->registers + NUM_REGISTERS);
 
     const char* file_name = "Code_format.bin";
 
     size_t num_symbols = Size_File_Counter (file_name);
 
-    Reader_To_Code (file_name, cpu, num_symbols);
-    Executor       (cpu, num_symbols, file_name);
+    error_t result_reading = Reader_To_Buff (file_name, num_symbols, cpu->code);
+    assert (result_reading == NO_ERROR);
+
+    size_t current_version = 7;
+    cpu->pc = Check_Signature (cpu->code, current_version);
+
+    assert (cpu->pc > 0);
+
+    error_t result_execute = Executor (cpu, num_symbols, file_name);
+    assert (result_execute == NO_ERROR);
 
     return 0;
 }
@@ -26,43 +33,56 @@ int main ()
 
 
 
-void Reader_To_Code (const char* file_name, struct CPU* cpu, size_t num_symbols)
+error_t Reader_To_Buff (const char* file_name, size_t num_symbols, char* buff)
 {
     FILE* Code = fopen (file_name, "rb");
-    fread (cpu->code, 1, num_symbols, Code);
+
+    int amount = fread (buff, 1, num_symbols, Code);
+
     fclose (Code);
+
+    return (amount > 0) ? NO_ERROR : READING_ERROR;
 }
 
 
-void Executor (struct CPU* cpu, size_t num_symbols, const char* file_name)
+error_t Executor (struct CPU* cpu, size_t num_symbols, const char* file_name)
 {
-    cpu->Stack = StackConstruct (num_symbols);
-    #define DEF_CMD(name, num, argc, code)  \
-    case name##_CMD: code break;            \
+    cpu->Stack       = StackConstruct (num_symbols);
+    cpu->Stack_calls = StackConstruct (MAX_CURRENT_COMMANDS);
+
+    #define DEF_CMD(name, num, argc, proc_func, code)  \
+    case name##_CMD: code break;                       \
 
     while (cpu->pc < num_symbols)
     {
-        Stack_Dump(cpu->Stack);
         switch ((int) cpu->code[cpu->pc])
         {
         #include "Commands.h"
         }
-        cpu->pc++;
 
     }
 
     #undef DEF_CMD
 
     StackDestruct (cpu->Stack);
+
+    return (cpu->pc == num_symbols) ? NO_ERROR : EXECUTION_ERROR;
 }
 
 
-//-----------------------------------------------------------------------------------
-//! This functions puts NaN in the elements of array at half-interval [begin, end)
-//!
-//! @param [out] begin Pointer to the begin
-//! @param [out] end   Pointer to the end
-//------------------------------------------------------------------------------------
+int Check_Signature (char* pointer, size_t current_version)
+{
+    if (*((int*)(pointer + 4)) != current_version)
+    {
+        printf ("%d\n", *((int*)(pointer + 4)));
+        printf ("\nNot correct version. Current version is %d.\n", current_version);
+        assert (!"OK");
+    }
+
+    return sizeof (FileHeader);
+}
+
+
 void Poison_Space (double* begin, double* end)
 {
     assert (begin);
@@ -71,19 +91,11 @@ void Poison_Space (double* begin, double* end)
     size_t lenth = end - begin;
 
     for (size_t i = 0; i < lenth; i++)
-            *(begin + i) = NAN;
+        *(begin + i) = NAN;
 }
 
 
 
-
-//-------------------------------------------------------------------------------
-//! This function creates buffer for the text from the file.
-//!
-//! @param [in] file_size - Size of the file.
-//!
-//! @return Function returns pointer to the buff.
-//-------------------------------------------------------------------------------
 char* Buff_Maker (size_t file_size)
 {
     char*  point_buff  = (char*) calloc (file_size, sizeof (char));
@@ -92,14 +104,6 @@ char* Buff_Maker (size_t file_size)
 
 
 
-
-//----------------------------------------------------------------------
-//! This function looks for the size of the file.
-//!
-//! @param [out] file_name - Name of the file
-//!
-//! @return file_size      - Size of the file
-//----------------------------------------------------------------------
 size_t Size_File_Counter (const char* file_name)
 {
     assert (file_name);

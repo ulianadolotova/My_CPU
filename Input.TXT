@@ -1,8 +1,17 @@
-IN
-POP RAX
-IN
-POP RBX
-PUSH RAX
-PUSH RBX
-ADD
-OUT
+in
+pop rax
+in
+pop rbx
+
+push rax
+push rbx
+je :1
+
+push 0
+out
+hlt
+
+1:
+push 1
+out
+hlt

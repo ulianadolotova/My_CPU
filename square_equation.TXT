@@ -1,0 +1,104 @@
+start
+in
+pop rax
+in
+pop rbx
+in
+pop rcx
+
+push rax
+push 0
+je :linear_case
+
+jmp :find_discriminant
+
+linear_case: 
+	push rbx
+	push 0
+	je :no_root
+	push 1
+	out 
+	push rcx
+	push -1
+	mul
+	push rbx
+	div
+	out 
+	hlt
+
+find_discriminant:
+	push rbx
+	push 2
+	pow 
+	push 4
+	push rax
+	push rcx
+	mul
+	mul
+	sub
+	pop rdx
+
+	push rdx
+	push 0
+
+	ja :two_roots
+
+	push rdx
+	push 0
+
+	je :one_root
+
+	jmp :no_root
+
+two_roots:
+	push 2
+	out
+
+	push -1
+	push rbx
+	mul
+	push rdx
+	push 1
+	push 2
+	div
+	pow
+	sub
+	push 2
+	push rax
+	mul
+	div
+	out
+
+	push -1
+	push rbx
+	mul
+	push rdx
+	push 1
+	push 2
+	div
+	pow
+	add
+	push 2
+	push rax
+	mul
+	div
+	out
+hlt
+
+one_root:
+	push 1
+	out
+	push -1
+	push rbx
+	mul
+	push 2
+	push rax
+	mul
+	div
+	out
+hlt
+
+no_root:
+	push 0
+	out
+hlt
