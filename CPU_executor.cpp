@@ -2,6 +2,7 @@
 
 int main ()
 {
+    // Вынести в отдельную функцию - CPU* cpu = CPU_Construct(...)
     CPU* cpu = (CPU*) calloc (1, sizeof (CPU));
 
     assert (cpu);
@@ -9,7 +10,13 @@ int main ()
     cpu->code      = Buff_Maker (MAX_BUFF_SIZE);
     cpu->registers = (double*) Buff_Maker ((NUM_REGISTERS + 1) * sizeof (double));
     cpu->pc        = 0;
+    cpu->RAM       = (double*) Buff_Maker ((RAM_SIZE) * sizeof (double));
+    for (int i = 0; i < RAM_SIZE; i++)
+    {
+    cpu->RAM[i] = i;
+    }
 
+    //------------------------------------------------------------
     Poison_Space (cpu->registers, cpu->registers + NUM_REGISTERS);
 
     const char* file_name = "Code_format.bin";

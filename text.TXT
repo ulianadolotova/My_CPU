@@ -1,15 +1,13 @@
+start
 push 1
-push -1
-pop rax
 pop rbx
-
-push 10
-in
-je :end_root
-hlt
-
-end_root:
-push rax
+push -1
 out
 push rbx
 out
+
+push [2]
+out
+push [rbx]
+push [rbx+2]
+hlt

@@ -66,12 +66,13 @@ const char   PUSH_MODE_VAL        = 2;
 const char   IMPOSSIBLE_POS       = -2;
 const char   IMPOSSIBLE_REG       = -1;
 const size_t MAX_BUFF_SIZE        = 10000;
-const size_t MAX_LABELS           = 100;
+const size_t MAX_LABELS           = 1000;
 const size_t MAX_NAME             = 20;
 const size_t FIRST                = 1;
 const size_t SECOND               = 2;
 const size_t MAX_CURRENT_COMMANDS = 20;
 const size_t NUM_REGISTERS        = 4;
+const size_t RAM_SIZE             = 1000;
 
 
 
@@ -85,10 +86,12 @@ struct CPU
 {
     struct Stack_t* Stack;
     struct Stack_t* Stack_calls;
+
     char*           code;
     size_t          pc;
 
     double*         registers;
+    double*         RAM;
 };
 
 
@@ -114,7 +117,8 @@ error_t           Translator              (char* buff_binary, struct file_info* 
 char              Reg_Compare             (char* string_temp);
 int               Processing_Commands     (size_t num, char* buff_binary, char* point_buff, int pos, size_t i, size_t* offset, struct label* arr_labels);
 int               Processing_PUSHCommand  (char* point_buff, char* buff_binary, size_t* offset);
-char              ModeCheck               (char* temp)
+char              ModeCheck               (char* temp);
+void              ArgMake                 (char* buff_binary, char* temp, size_t* offset);
 int               Processing_POPCommand   (char* point_buff, char* buff_binary, size_t* offset);
 int               Processing_JMPCommand   (char* point_buff, char* buff_binary, size_t* offset, struct label* arr_labels);
 void              Labels_Preprocessing    (struct label* arr_labels, size_t size_arr);

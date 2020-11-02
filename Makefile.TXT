@@ -5,7 +5,7 @@ CPU_Calculator.exe: CPU_executor.cpp Stack\Stack_functions.cpp Stack\Log_functio
 	g++ -w CPU_executor.cpp Stack\Stack_functions.cpp Stack\Log_functions.cpp -o CPU_Calculator.exe
 
 run_assembler: CPU_assembler.exe 
-	CPU_assembler.exe square_equation.txt
+	CPU_assembler.exe text.txt
 
 CPU_assembler.exe: CPU_assembler.cpp Input.txt CPU.h Commands.h
 	g++ CPU_assembler.cpp -o CPU_assembler.exe	

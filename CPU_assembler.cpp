@@ -171,21 +171,21 @@ int Processing_PUSHCommand (char* point_buff, char* buff_binary, size_t* offset)
     assert (buff_binary);
     assert (offset);
 
-    //char mode = 0;
+    char mode = 0;
     int pos      = IMPOSSIBLE_POS;
     double value = 0;
-    char string_temp[MAX_STRING_SIZE] = {};
+    char* string_temp = (char*) calloc (MAX_STRING_SIZE, sizeof(char));
 
     sscanf (point_buff, "%lg%n", &value, &pos);
 
     if (pos == IMPOSSIBLE_POS)
     {
         sscanf (point_buff, "%s%n", string_temp, &pos);
-        //mode = ModeCheck (temp);
+        mode = ModeCheck (string_temp);
         *(buff_binary) = mode;
         *(offset) += sizeof (char);
 
-        /*if ((mode & 4)/4)         // Simply skips first '['
+        if ((mode & 4)/4)         // Simply skips first '['
             string_temp++;
 
         if (!(mode & 1) && ((mode & 2)/2) && ((mode & 4)/4))    // Deleting last ']' if it was
@@ -201,51 +201,41 @@ int Processing_PUSHCommand (char* point_buff, char* buff_binary, size_t* offset)
             string_val_temp++;
 
             ArgMake (buff_binary,     string_temp, offset);
-            ArgMake (buff_binary, string_val_temp, offset);
+            ArgMake (buff_binary + sizeof (char), string_val_temp, offset);
         }
         else
         {
             ArgMake (buff_binary,     string_temp, offset);
         }
-
-        */
-        char reg_name = Reg_Compare (string_temp);
-
-        if (reg_name == IMPOSSIBLE_REG)
-            return      IMPOSSIBLE_POS;
-        else
-        {
-            *(buff_binary + sizeof (char)) = reg_name;
-            *(offset) += sizeof (char);
-            return pos;
-        }
-
     }
     else
     { //      imid   reg   mem
-        //mode = 1*1 + 0*2 + 0*4;
+        mode = 1*1 + 0*2 + 0*4;
         *(buff_binary) = mode;
         *(offset) += sizeof (char);
 
         //printf("\n%lg\n", value);
         *((double*) (buff_binary + sizeof (char))) = value;
         *(offset) += sizeof (double);
-        return pos;
 
     }
-    //return pos;
+    return pos;
 }
-/*
-void ArgMake (char* temp, size_t* offset)
+
+
+
+
+void ArgMake (char* buff_binary, char* temp, size_t* offset)
 {
     if (strpbrk(temp, "1234567890"))
     {
-        *((double*) (buff_binary + sizeof (char))) = atof(temp);
+        *((double*) (buff_binary + sizeof (char))) = atof (temp);
         *(offset) += sizeof (double);
     }
     else
     {
-        char reg_name = Reg_Compare (string_temp);
+        printf ("temp = %s\n", temp);
+        char reg_name = Reg_Compare (temp);
 
         if (reg_name == IMPOSSIBLE_REG)
         {
@@ -256,11 +246,9 @@ void ArgMake (char* temp, size_t* offset)
         {
             *(buff_binary + sizeof (char)) = reg_name;
             *(offset) += sizeof (char);
-            return pos;
         }
     }
 }
-
 
 char ModeCheck (char* temp)
 {
@@ -287,8 +275,6 @@ char ModeCheck (char* temp)
     char mode = imid*1 + reg*2 + mem*4;
     return mode;
 }
-*/
-
 
 int Processing_POPCommand (char* point_buff, char* buff_binary, size_t* offset)
 {

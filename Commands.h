@@ -21,39 +21,58 @@ DEF_CMD (OUT,  2, 0, IMPOSSIBLE_POS,
 
 DEF_CMD (PUSH, 3, 2, Processing_PUSHCommand (point_buff  + i + pos, buff_binary + *offset, offset),
                      {
-                     int mode = cpu->code[cpu->pc + 1];
-
-                     if (mode == PUSH_MODE_REG)
+                     ++cpu->pc;
+                     int mode = cpu->code[cpu->pc++];
+                     double arg = 0;
+                     if (mode & 1)
                      {
-                        int reg_num = cpu->code[cpu->pc + 2];
-                        assert (!isnan (cpu->registers[reg_num]));
-                        StackPush (cpu->Stack, cpu->registers[reg_num]);
-                        cpu->pc += 3 * sizeof (char);
+                        arg += *(double*) (cpu->code + cpu->pc);
+                        cpu->pc += sizeof (double);
+                     }
+                     if ((mode & 2)/2)
+                     {
+                        arg += cpu->registers[cpu->code[cpu->pc++]];
+                     }
+                     printf ("arg_push = %d\n", arg);
+                     if ((mode & 4)/4)
+                     {
+                        arg = *(cpu->RAM + (int)arg);
                      }
 
-                     else if (mode == PUSH_MODE_VAL)
-                     {
-                        double value = *((double*)(cpu->code + cpu->pc + 2));
-                        StackPush (cpu->Stack, value);
-                        cpu->pc += (2 * sizeof (char) + sizeof (double));
-                     }
-
-                     else
+                     StackPush (cpu->Stack, arg);
+                     /*else
                      {
                         EXECUTE_ERROR
-                     }
+                     }*/
 
                      })
 
-DEF_CMD (POP,  4, 1, Processing_POPCommand  (point_buff + i + pos, buff_binary + *offset, offset),
+DEF_CMD (POP,  4, 1, Processing_PUSHCommand (point_buff  + i + pos, buff_binary + *offset, offset),
                      {
-                     int reg_num = cpu->code[cpu->pc + 1];
-                     if ( reg_num < 1 || reg_num > NUM_REGISTERS)
+                     double temp = StackPop (cpu->Stack);
+
+                     ++cpu->pc;
+                     int mode = cpu->code[cpu->pc++];
+                     double arg = 0;
+                     if (mode & 1)
                      {
-                        EXECUTE_ERROR
+                        arg += *(double*) (cpu->code + cpu->pc);
+                        cpu->pc += sizeof (double);
                      }
-                     cpu->registers[reg_num] = StackPop (cpu->Stack);
-                     cpu->pc += 2 * sizeof (char);
+                     if ((mode & 2)/2)
+                     {
+                        arg += cpu->registers[cpu->code[cpu->pc++]];
+                     }
+                     if ((mode & 4)/4)
+                     {
+                        *(cpu->RAM + (int)arg) = temp;
+                     }
+                     else
+                     {
+                        cpu->registers[cpu->code[cpu->pc - 1]] = temp;
+                     }
+
+                     printf ("arg = %d\n", arg);
                      })
 
 DEF_CMD (ADD,  5, 0, IMPOSSIBLE_POS,
